@@ -6,7 +6,6 @@ import akka.actor.typed.Scheduler;
 import akka.actor.typed.javadsl.AskPattern;
 import akka.http.javadsl.marshallers.jackson.Jackson;
 import akka.http.javadsl.model.StatusCodes;
-import akka.http.javadsl.model.headers.BasicHttpCredentials;
 import akka.http.javadsl.server.Route;
 import akka.http.javadsl.server.directives.SecurityDirectives;
 import org.example.actor.UserRegistry;
@@ -47,10 +46,6 @@ public class UserRoutes {
 
     private CompletionStage<UserRegistry.ActionPerformed> createUser(RegisterDto user) {
         return AskPattern.ask(userRegistryActor, ref -> new UserRegistry.CreateUser(user, ref), askTimeout, scheduler);
-    }
-
-    private CompletionStage<UserRegistry.ActionPerformed> authenticateUser(String username, String password) {
-        return AskPattern.ask(userRegistryActor, ref -> new UserRegistry.AuthenticateUser(username,password, ref), askTimeout, scheduler);
     }
 
     public Route apiRoutes() {
@@ -95,9 +90,8 @@ public class UserRoutes {
                                         )
                                 )
                         ),      path("me", () ->
-                                authenticateBasic("Authenticated", this::myAuthenticator, user -> {
-                                    return complete(StatusCodes.OK, user,Jackson.marshaller());
-                                })
+                                authenticateBasic("Authenticated", this::myAuthenticator, user ->
+                                        complete(StatusCodes.OK, user,Jackson.marshaller()))
                         ), path("logout", () ->
                                 concat(
                                         put(() -> {
@@ -115,12 +109,10 @@ public class UserRoutes {
         }
         CompletionStage<UserRegistry.GetUserResponse> userCompletionStage  = getUser(providedCredentialsOptional.get().identifier());
 
-        UserRegistry.GetUserResponse response = null;
+        UserRegistry.GetUserResponse response;
         try {
             response = userCompletionStage.toCompletableFuture().get();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } catch (ExecutionException e) {
+        } catch (InterruptedException |ExecutionException e) {
             throw new RuntimeException(e);
         }
         if(response.userOptional().isEmpty()){

@@ -6,12 +6,11 @@ import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
-import akka.http.javadsl.model.DateTime;
 import org.example.dto.LoginDto;
 import org.example.dto.RegisterDto;
 import org.example.model.User;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.*;
 
 public class UserRegistry extends AbstractBehavior<UserRegistry.Command> {
@@ -20,24 +19,24 @@ public class UserRegistry extends AbstractBehavior<UserRegistry.Command> {
     sealed public interface Command permits ActionPerformed, CreateUser, GetUser, LoginUser, AuthenticateUser {
     }
 
-    public final static record CreateUser(RegisterDto registerDto,
-                                          ActorRef<ActionPerformed> replyTo) implements Command {
+    public record CreateUser(RegisterDto registerDto,
+                             ActorRef<ActionPerformed> replyTo) implements Command {
     }
 
-    public final static record LoginUser(LoginDto loginDto, ActorRef<ActionPerformed> replyTo) implements Command {
+    public record LoginUser(LoginDto loginDto, ActorRef<ActionPerformed> replyTo) implements Command {
     }
 
-    public final static record AuthenticateUser(String username, String password,
-                                                ActorRef<ActionPerformed> replyTo) implements Command {
+    public record AuthenticateUser(String username, String password,
+                                   ActorRef<ActionPerformed> replyTo) implements Command {
     }
 
-    public final static record GetUserResponse(Optional<User> userOptional) {
+    public record GetUserResponse(Optional<User> userOptional) {
     }
 
-    public final static record GetUser(String name, ActorRef<GetUserResponse> replyTo) implements Command {
+    public record GetUser(String name, ActorRef<GetUserResponse> replyTo) implements Command {
     }
 
-    public final static record ActionPerformed(Boolean check) implements Command {
+    public record ActionPerformed(Boolean check) implements Command {
         public boolean isSuccess() {
             return check;
         }
@@ -90,7 +89,7 @@ public class UserRegistry extends AbstractBehavior<UserRegistry.Command> {
                         generateID(command.registerDto),
                         command.registerDto.getEmail(),
                         command.registerDto.getPassword(),
-                        LocalDateTime.now(),
+                        Date.from(Instant.now()),
                         command.registerDto.getName()
                 )
         );
@@ -121,7 +120,6 @@ public class UserRegistry extends AbstractBehavior<UserRegistry.Command> {
     }
 
     private String generateID(Object obj) {
-        UUID uuid = UUID.randomUUID();
-        return uuid.toString();
+        return UUID.nameUUIDFromBytes(obj.toString().getBytes()).toString();
     }
 }
