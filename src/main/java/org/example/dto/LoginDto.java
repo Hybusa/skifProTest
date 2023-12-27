@@ -1,9 +1,12 @@
 package org.example.dto;
 
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class LoginDto {
-    String email;
-    String password;
+    private String email;
+    private String password;
 }

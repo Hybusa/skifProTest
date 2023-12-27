@@ -1,10 +1,13 @@
 package org.example.dto;
 
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class RegisterDto {
-    String email;
-    String password;
-    String name;
+    private String email;
+    private String password;
+    private String name;
 }

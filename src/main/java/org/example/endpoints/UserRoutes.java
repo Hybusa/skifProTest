@@ -11,11 +11,13 @@ import akka.http.javadsl.server.directives.SecurityDirectives;
 import org.example.actor.UserRegistry;
 import org.example.dto.LoginDto;
 import org.example.dto.RegisterDto;
+import org.example.dto.myError;
 import org.example.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -61,10 +63,10 @@ public class UserRoutes {
                                                                 onSuccess(createUser(registerDto), performed -> {
                                                                     if (performed.isSuccess()) {
                                                                         log.info(String.format("User %s created", registerDto.getEmail()));
-                                                                        return complete(StatusCodes.OK, "{}");
+                                                                        return complete(StatusCodes.OK, new HashMap<>(),Jackson.marshaller());
                                                                     } else {
                                                                         log.info(String.format("User %s was not created already exists", registerDto.getEmail()));
-                                                                        return complete(StatusCodes.UNPROCESSABLE_CONTENT, "{ \"error\": \"session.errors.emailAlreadyRegistered\" }");
+                                                                        return complete(StatusCodes.UNPROCESSABLE_CONTENT, new myError("session.errors.emailAlreadyRegistered"),Jackson.marshaller());
                                                                     }
                                                                 })
                                                 )
@@ -79,11 +81,11 @@ public class UserRoutes {
                                                         loginDto ->
                                                                 onSuccess(loginUser(loginDto), performed -> {
                                                                     if (performed.isSuccess()) {
-                                                                        log.info(String.format("User %s created", loginDto.getEmail()));
-                                                                        return complete(StatusCodes.OK, "{}");
+                                                                        log.info(String.format("User %s logged in", loginDto.getEmail()));
+                                                                        return complete(StatusCodes.OK, new HashMap<>(),Jackson.marshaller());
                                                                     } else {
                                                                         log.info(String.format("User %s not logged in", loginDto.getEmail()));
-                                                                        return complete(StatusCodes.UNPROCESSABLE_CONTENT, "{ \"error\": \"session.errors.emailAlreadyRegistered\" }");
+                                                                        return complete(StatusCodes.UNPROCESSABLE_CONTENT, new myError("session.errors"),Jackson.marshaller());
                                                                     }
                                                                 })
                                                 )
@@ -96,7 +98,7 @@ public class UserRoutes {
                                 concat(
                                         put(() -> {
                                                     log.info("User logged out");
-                                                    return complete(StatusCodes.OK, "{}");
+                                                    return complete(StatusCodes.OK, new HashMap<>(), Jackson.marshaller());
                                                 }
                                         )
                                 ))

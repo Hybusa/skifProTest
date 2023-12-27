@@ -10,13 +10,13 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 public class User {
-    String id;
-    String email;
+    private String id;
+    private String email;
 
     @JsonIgnore
-    String password;
+    private String password;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm:ss")
-    Date created;
-    String name;
+    private Date created;
+    private String name;
 }
