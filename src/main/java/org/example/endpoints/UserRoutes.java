@@ -6,17 +6,20 @@ import akka.actor.typed.Scheduler;
 import akka.actor.typed.javadsl.AskPattern;
 import akka.http.javadsl.marshallers.jackson.Jackson;
 import akka.http.javadsl.model.StatusCodes;
+import akka.http.javadsl.model.headers.BasicHttpCredentials;
 import akka.http.javadsl.server.Route;
 import akka.http.javadsl.server.directives.SecurityDirectives;
 import org.example.actor.UserRegistry;
 import org.example.dto.LoginDto;
 import org.example.dto.RegisterDto;
+import org.example.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 
 import static akka.http.javadsl.server.Directives.*;
 
@@ -51,6 +54,7 @@ public class UserRoutes {
     }
 
     public Route apiRoutes() {
+
         return pathPrefix("api_v1", () ->
                 concat(
                         path("registrate", () ->
@@ -90,9 +94,9 @@ public class UserRoutes {
                                                 )
                                         )
                                 )
-                        ), path("me", () ->
-                                authenticateBasic("credentialsAuthenticator", this::authenticate, user -> {
-                                    
+                        ),      path("me", () ->
+                                authenticateBasic("Authenticated", this::myAuthenticator, user -> {
+                                    return complete(StatusCodes.OK, user,Jackson.marshaller());
                                 })
                         ), path("logout", () ->
                                 concat(
@@ -105,7 +109,32 @@ public class UserRoutes {
                 ));
     }
 
-    private Optional<Object> authenticate(Optional<SecurityDirectives.ProvidedCredentials> providedCredentials) {
+    private Optional<Object> myAuthenticator(Optional<SecurityDirectives.ProvidedCredentials> providedCredentialsOptional) {
+        if(providedCredentialsOptional.isEmpty()){
+            return Optional.empty();
+        }
+        CompletionStage<UserRegistry.GetUserResponse> userCompletionStage  = getUser(providedCredentialsOptional.get().identifier());
+
+        UserRegistry.GetUserResponse response = null;
+        try {
+            response = userCompletionStage.toCompletableFuture().get();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+        if(response.userOptional().isEmpty()){
+            return Optional.empty();
+        }
+
+        User user = response.userOptional().get();
+
+        if(!providedCredentialsOptional.get().verify(user.getPassword())){
+            return Optional.empty();
+        }
+
+
+        return Optional.of(user);
     }
 
 
